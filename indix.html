@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>File Manager with Audio Playback</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+    }
+    #file-list {
+        list-style: none;
+        padding: 0;
+    }
+    #file-list li {
+        padding: 10px;
+        border-bottom: 1px solid #ddd;
+        cursor: pointer;
+    }
+    #file-list li:hover {
+        background-color: #f0f0f0;
+    }
+    #back-button {
+        display: none;
+        margin-bottom: 10px;
+    }
+</style>
+</head>
+<body>
+<h1>Gerenciador de Arquivos de Áudio</h1>
+<button id="back-button">Voltar</button>
+<ul id="file-list"></ul>
+<audio id="audio-player" controls></audio>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const fileList = document.getElementById('file-list');
+    const audioPlayer = document.getElementById('audio-player');
+    const backButton = document.getElementById('back-button');
+
+    fetchFiles('');
+
+    fileList.addEventListener('click', event => {
+        const target = event.target;
+        if (target && target.tagName === 'LI') {
+            const file = JSON.parse(target.getAttribute('data-file'));
+            if (file.isDirectory) {
+                fetchFiles(file.path);
+                backButton.style.display = 'block'; // Exibe o botão de voltar ao entrar em uma pasta
+            } else {
+                audioPlayer.src = "main/"+file.path;
+                //alert(audioPlayer.src);
+                audioPlayer.play();
+            }
+        }
+    });
+
+    backButton.addEventListener('click', () => {
+        const currentDir = backButton.getAttribute('data-dir');
+        fetchFiles(currentDir);
+        backButton.style.display = currentDir ? 'block' : 'none'; // Exibe ou oculta o botão de voltar conforme necessário
+    });
+
+    function fetchFiles(dir) {
+        fetch('radio.php?dir=' + dir)
+            .then(response => response.json())
+            .then(files => {
+                fileList.innerHTML = ''; // Limpa a lista atual
+
+                files.forEach(file => {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = file.name;
+                    listItem.setAttribute('data-file', JSON.stringify(file));
+                    fileList.appendChild(listItem);
+                });
+
+                // Configura o botão de voltar
+                backButton.setAttribute('data-dir', dir ? dir.substring(0, dir.lastIndexOf('/')) : '');
+            })
+            .catch(error => console.error('Error fetching files:', error));
+    }
+});
+</script>
+</body>
+</html>
